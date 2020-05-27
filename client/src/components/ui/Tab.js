@@ -12,6 +12,7 @@ class Tab extends Component {
             activeTab,
             label,
             title,
+            t,
         } = this.props;
 
         const tabClass = classnames({
@@ -27,7 +28,7 @@ class Tab extends Component {
                 <svg className="tab__icon">
                     <use xlinkHref={`#${label.toLowerCase()}`} />
                 </svg>
-                {title || label}
+                {t(title || label)}
             </div>
         );
     }
@@ -38,6 +39,7 @@ Tab.propTypes = {
     label: PropTypes.string.isRequired,
     onClick: PropTypes.func.isRequired,
     title: PropTypes.string,
+    t: PropTypes.func.isRequired,
 };
 
 export default Tab;
