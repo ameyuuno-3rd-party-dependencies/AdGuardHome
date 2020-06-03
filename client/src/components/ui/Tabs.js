@@ -6,6 +6,140 @@ import { Trans } from 'react-i18next';
 import Tab from './Tab';
 import './Tabs.css';
 
+const dnsPrivacyList = [{
+    title: 'Android',
+    list: [
+        {
+            label: 'setup_dns_privacy_android_1',
+        },
+        {
+            label: 'setup_dns_privacy_android_2',
+            components: [
+                {
+                    key: 0,
+                    href: 'https://adguard.com/adguard-android/overview.html',
+                },
+                <code key="1">text</code>,
+            ],
+        },
+        {
+            label: 'setup_dns_privacy_android_3',
+            components: [
+                {
+                    key: 0,
+                    href: 'https://getintra.org/',
+                },
+                <code key="1">text</code>,
+            ],
+        },
+    ],
+},
+{
+    title: 'iOS',
+    list: [
+        {
+            label: 'setup_dns_privacy_ios_1',
+            components: [
+                {
+                    key: 0,
+                    href: 'https://itunes.apple.com/app/id1452162351',
+                },
+                    <code key="1">text</code>,
+                    {
+                        key: 2,
+                        href: 'https://dnscrypt.info/stamps',
+                    },
+
+            ],
+        },
+        {
+            label: 'setup_dns_privacy_ios_2',
+            components: [
+                {
+                    key: 0,
+                    href: 'https://adguard.com/adguard-ios/overview.html',
+                },
+                    <code key="1">text</code>,
+            ],
+        },
+    ],
+},
+{
+    title: 'setup_dns_privacy_other_title',
+    list: [
+        {
+            label: 'setup_dns_privacy_other_1',
+        },
+        {
+            label: 'setup_dns_privacy_other_2',
+            components: [
+                {
+                    key: 0,
+                    href: 'https://github.com/AdguardTeam/dnsproxy',
+                },
+            ],
+        },
+        {
+            href: 'https://github.com/jedisct1/dnscrypt-proxy',
+            label: 'setup_dns_privacy_other_3',
+            components: [
+                {
+                    key: 0,
+                    href: 'https://github.com/jedisct1/dnscrypt-proxy',
+                },
+                    <code key="1">text</code>,
+            ],
+        },
+        {
+            label: 'setup_dns_privacy_other_4',
+            components: [
+                {
+                    key: 0,
+                    href: 'https://github.com/jedisct1/dnscrypt-proxy',
+                },
+                    <code key="1">text</code>,
+            ],
+        },
+        {
+            label: 'setup_dns_privacy_other_5',
+            components: [
+                {
+                    key: 0,
+                    href: 'https://dnscrypt.info/implementations',
+                },
+                {
+                    key: 1,
+                    href: 'https://dnsprivacy.org/wiki/display/DP/DNS+Privacy+Clients',
+                },
+            ],
+        },
+    ],
+},
+];
+
+const renderDnsPrivacyList = ({ title, list }) => <div className="tab__paragraph">
+    <strong><Trans>{title}</Trans></strong>
+    <ul>{list.map(({ label, components }) => <li key={label}>
+        <Trans
+            components={components && components.map((props) => {
+                if (React.isValidElement(props)) {
+                    return props;
+                }
+                const {
+                    // eslint-disable-next-line react/prop-types
+                    href, target = '_blank', rel = 'noopener noreferrer', key = '0',
+                } = props;
+
+                return <a
+                    href={href} target={target}
+                    rel={rel} key={key}>link</a>;
+            })}>
+            {label}
+        </Trans>
+    </li>)}
+    </ul>
+</div>;
+
 const getContent = ({
     tlsAddress,
     httpsAddress,
@@ -61,6 +195,7 @@ const getContent = ({
             'install_devices_ios_list_4'],
     },
     dns_privacy: {
+        title: 'dns_privacy',
         // eslint-disable-next-line react/display-name
         getTitle: () => <div label="dns_privacy" title={t('dns_privacy')}>
             <div className="tab__text">
@@ -91,226 +226,47 @@ const getContent = ({
                     </div>
                 )}
                 {showDnsPrivacyNotice
-                    ? (
+                    ? <div className="tab__paragraph">
+                        <Trans
+                            components={[
+                                <a
+                                    href="https://github.com/AdguardTeam/AdguardHome/wiki/Encryption"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    key="0"
+                                >
+                                    link
+                                </a>,
+                                <code key="1">text</code>,
+                            ]}
+                        >
+                            setup_dns_notice
+                        </Trans>
+                    </div>
+                    : <>
                         <div className="tab__paragraph">
-                            <Trans
-                                components={[
-                                    <a
-                                        href="https://github.com/AdguardTeam/AdguardHome/wiki/Encryption"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        key="0"
-                                    >
-                                        link
-                                    </a>,
-                                    <code key="1">text</code>,
-                                ]}
-                            >
-                                setup_dns_notice
+                            <Trans components={[<p key="0">text</p>]}>
+                                setup_dns_privacy_3
                             </Trans>
                         </div>
-                    )
-                    : (
-                        <>
-                            <div className="tab__paragraph">
-                                <Trans components={[<p key="0">text</p>]}>
-                                    setup_dns_privacy_3
-                                </Trans>
-                            </div>
-                            <div className="tab__paragraph">
-                                <strong>Android</strong>
-                                <ul>
-                                    <li>
-                                        <Trans>setup_dns_privacy_android_1</Trans>
-                                    </li>
-                                    <li>
-                                        <Trans
-                                            components={[
-                                                <a
-                                                    href="https://adguard.com/adguard-android/overview.html"
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    key="0"
-                                                >
-                                                    link
-                                                </a>,
-                                                <code key="1">text</code>,
-                                            ]}
-                                        >
-                                            setup_dns_privacy_android_2
-                                        </Trans>
-                                    </li>
-                                    <li>
-                                        <Trans
-                                            components={[
-                                                <a
-                                                    href="https://getintra.org/"
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    key="0"
-                                                >
-                                                    link
-                                                </a>,
-                                                <code key="1">text</code>,
-                                            ]}
-                                        >
-                                            setup_dns_privacy_android_3
-                                        </Trans>
-                                    </li>
-                                </ul>
-                            </div>
-                            <div className="tab__paragraph">
-                                <strong>iOS</strong>
-                                <ul>
-                                    <li>
-                                        <Trans
-                                            components={[
-                                                <a
-                                                    href="https://itunes.apple.com/app/id1452162351"
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    key="0"
-                                                >
-                                                    link
-                                                </a>,
-                                                <code key="1">text</code>,
-                                                <a
-                                                    href="https://dnscrypt.info/stamps"
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    key="2"
-                                                >
-                                                    link
-                                                </a>,
-                                            ]}
-                                        >
-                                            setup_dns_privacy_ios_1
-                                        </Trans>
-                                    </li>
-                                    <li>
-                                        <Trans
-                                            components={[
-                                                <a
-                                                    href="https://adguard.com/adguard-ios/overview.html"
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    key="0"
-                                                >
-                                                    link
-                                                </a>,
-                                                <code key="1">text</code>,
-                                            ]}
-                                        >
-                                            setup_dns_privacy_ios_2
-                                        </Trans>
-                                    </li>
-                                </ul>
-                            </div>
-                            <div className="tab__paragraph">
-                                <strong>
-                                    <Trans>setup_dns_privacy_other_title</Trans>
-                                </strong>
-                                <ul>
-                                    <li>
-                                        <Trans>setup_dns_privacy_other_1</Trans>
-                                    </li>
-                                    <li>
-                                        <Trans
-                                            components={[
-                                                <a
-                                                    href="https://github.com/AdguardTeam/dnsproxy"
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    key="0"
-                                                >
-                                                    link
-                                                </a>,
-                                            ]}
-                                        >
-                                            setup_dns_privacy_other_2
-                                        </Trans>
-                                    </li>
-                                    <li>
-                                        <Trans
-                                            components={[
-                                                <a
-                                                    href="https://github.com/jedisct1/dnscrypt-proxy"
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    key="0"
-                                                >
-                                                    link
-                                                </a>,
-                                                <code key="1">text</code>,
-                                            ]}
-                                        >
-                                            setup_dns_privacy_other_3
-                                        </Trans>
-                                    </li>
-                                    <li>
-                                        <Trans
-                                            components={[
-                                                <a
-                                                    href="https://www.mozilla.org/firefox/"
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    key="0"
-                                                >
-                                                    link
-                                                </a>,
-                                                <code key="1">text</code>,
-                                            ]}
-                                        >
-                                            setup_dns_privacy_other_4
-                                        </Trans>
-                                    </li>
-                                    <li>
-                                        <Trans
-                                            components={[
-                                                <a
-                                                    href="https://dnscrypt.info/implementations"
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    key="0"
-                                                >
-                                                    link
-                                                </a>,
-                                                <a
-                                                    href="https://dnsprivacy.org/wiki/display/DP/DNS+Privacy+Clients"
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    key="1"
-                                                >
-                                                    link
-                                                </a>,
-                                            ]}
-                                        >
-                                            setup_dns_privacy_other_5
-                                        </Trans>
-                                    </li>
-                                </ul>
-                            </div>
-                        </>
-                    )}
+                        {dnsPrivacyList.map(renderDnsPrivacyList)}
+                    </>}
             </div>
         </div>,
-        title: 'dns_privacy',
     },
 });
 
-const renderContent = (({ title, list, getTitle }, t) => <div key={title} label={title}>
+const renderContent = ({ title, list, getTitle }, t) => <div key={title} label={title}>
     <div className="tab__title">{t(title)}</div>
     <div className="tab__text">
         {typeof getTitle === 'function' && getTitle()}
-        {list && <ol>{list.map((item) => <li key={item}><Trans>{item}</Trans></li>)}</ol>}
+        {list
+        && <ol>{list.map((item) => <li key={item}>
+            <Trans>{item}</Trans>
+        </li>)}
+        </ol>}
     </div>
-</div>);
-
-renderContent.propTypes = {
-    title: PropTypes.string.isRequired,
-    list: PropTypes.array.isRequired,
-    getTitle: PropTypes.func,
-};
+</div>;
 
 class Tabs extends Component {
     constructor() {
@@ -384,6 +340,17 @@ Tabs.propTypes = {
     httpsAddress: PropTypes.array.isRequired,
     showDnsPrivacyNotice: PropTypes.bool.isRequired,
     t: PropTypes.func.isRequired,
+};
+
+renderDnsPrivacyList.propTypes = {
+    title: PropTypes.string.isRequired,
+    list: PropTypes.array.isRequired,
+};
+
+renderContent.propTypes = {
+    title: PropTypes.string.isRequired,
+    list: PropTypes.array.isRequired,
+    getTitle: PropTypes.func,
 };
 
 export default Tabs;
