@@ -24,6 +24,14 @@ const getInputFields = () => [{
 {
     name: 'dnsRequestOption',
     type: 'radio',
+    value: DNS_REQUEST_OPTIONS.LOAD_BALANCING,
+    component: renderRadioField,
+    subtitle: 'load_balancing_desc',
+    placeholder: 'load_balancing',
+},
+{
+    name: 'dnsRequestOption',
+    type: 'radio',
     value: DNS_REQUEST_OPTIONS.PARALLEL_REQUESTS,
     component: renderRadioField,
     subtitle: 'upstream_parallel',
