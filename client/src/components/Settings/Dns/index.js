@@ -20,7 +20,6 @@ const Dns = (props) => {
         settings,
         access,
         setAccessList,
-        testUpstream,
         dnsConfig,
         setDnsConfig,
     } = props;
@@ -35,9 +34,7 @@ const Dns = (props) => {
                 : <>
                     <Upstream
                         processingTestUpstream={settings.processingTestUpstream}
-                        testUpstream={testUpstream}
                         dnsConfig={dnsConfig}
-                        setDnsConfig={setDnsConfig}
                     />
                     <Config
                         dnsConfig={dnsConfig}
@@ -51,7 +48,6 @@ const Dns = (props) => {
 
 Dns.propTypes = {
     settings: PropTypes.object.isRequired,
-    testUpstream: PropTypes.func.isRequired,
     getAccessList: PropTypes.func.isRequired,
     setAccessList: PropTypes.func.isRequired,
     access: PropTypes.object.isRequired,
