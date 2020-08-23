@@ -81,6 +81,7 @@ type FilteringConfig struct {
 	AAAADisabled           bool     `yaml:"aaaa_disabled"`      // Respond with an empty answer to all AAAA requests
 	EnableDNSSEC           bool     `yaml:"enable_dnssec"`      // Set DNSSEC flag in outcoming DNS request
 	EnableEDNSClientSubnet bool     `yaml:"edns_client_subnet"` // Enable EDNS Client Subnet option
+	MaxGoroutines          uint32   `yaml:"max_goroutines"`     // Max. number of parallel goroutines for processing incoming requests
 }
 
 // TLSConfig is the TLS configuration for HTTPS, DNS-over-HTTPS, and DNS-over-TLS
@@ -133,21 +134,30 @@ var defaultValues = ServerConfig{
 // createProxyConfig creates and validates configuration for the main proxy
 func (s *Server) createProxyConfig() (proxy.Config, error) {
 	proxyConfig := proxy.Config{
-		UDPListenAddr:          s.conf.UDPListenAddr,
-		TCPListenAddr:          s.conf.TCPListenAddr,
+		UDPListenAddr:          []*net.UDPAddr{s.conf.UDPListenAddr},
+		TCPListenAddr:          []*net.TCPAddr{s.conf.TCPListenAddr},
 		Ratelimit:              int(s.conf.Ratelimit),
 		RatelimitWhitelist:     s.conf.RatelimitWhitelist,
 		RefuseAny:              s.conf.RefuseAny,
-		CacheEnabled:           true,
-		CacheSizeBytes:         int(s.conf.CacheSize),
 		CacheMinTTL:            s.conf.CacheMinTTL,
 		CacheMaxTTL:            s.conf.CacheMaxTTL,
 		UpstreamConfig:         s.conf.UpstreamConfig,
 		BeforeRequestHandler:   s.beforeRequestHandler,
 		RequestHandler:         s.handleDNSRequest,
-		AllServers:             s.conf.AllServers,
 		EnableEDNSClientSubnet: s.conf.EnableEDNSClientSubnet,
-		FindFastestAddr:        s.conf.FastestAddr,
+		MaxGoroutines:          int(s.conf.MaxGoroutines),
+	}
+
+	if s.conf.CacheSize != 0 {
+		proxyConfig.CacheEnabled = true
+		proxyConfig.CacheSizeBytes = int(s.conf.CacheSize)
+	}
+
+	proxyConfig.UpstreamMode = proxy.UModeLoadBalance
+	if s.conf.AllServers {
+		proxyConfig.UpstreamMode = proxy.UModeParallel
+	} else if s.conf.FastestAddr {
+		proxyConfig.UpstreamMode = proxy.UModeFastestAddr
 	}
 
 	if len(s.conf.BogusNXDomain) > 0 {
@@ -221,7 +231,7 @@ func (s *Server) prepareIntlProxy() {
 // prepareTLS - prepares TLS configuration for the DNS proxy
 func (s *Server) prepareTLS(proxyConfig *proxy.Config) error {
 	if s.conf.TLSListenAddr != nil && len(s.conf.CertificateChainData) != 0 && len(s.conf.PrivateKeyData) != 0 {
-		proxyConfig.TLSListenAddr = s.conf.TLSListenAddr
+		proxyConfig.TLSListenAddr = []*net.TCPAddr{s.conf.TLSListenAddr}
 		var err error
 		s.conf.cert, err = tls.X509KeyPair(s.conf.CertificateChainData, s.conf.PrivateKeyData)
 		if err != nil {

@@ -1,65 +1,40 @@
-import React, { Component, Fragment } from 'react';
-import PropTypes from 'prop-types';
-import { withTranslation } from 'react-i18next';
+import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
+import { useDispatch, useSelector } from 'react-redux';
 import Upstream from './Upstream';
 import Access from './Access';
 import Config from './Config';
 import PageTitle from '../../ui/PageTitle';
 import Loading from '../../ui/Loading';
+import CacheConfig from './Cache';
+import { getDnsConfig } from '../../../actions/dnsConfig';
+import { getAccessList } from '../../../actions/access';
 
-class Dns extends Component {
-    componentDidMount() {
-        this.props.getAccessList();
-        this.props.getDnsConfig();
-    }
+const Dns = () => {
+    const { t } = useTranslation();
+    const dispatch = useDispatch();
+    const processing = useSelector((state) => state.access.processing);
+    const processingGetConfig = useSelector((state) => state.dnsConfig.processingGetConfig);
 
-    render() {
-        const {
-            t,
-            settings,
-            access,
-            setAccessList,
-            testUpstream,
-            dnsConfig,
-            setDnsConfig,
-        } = this.props;
+    const isDataLoading = processing || processingGetConfig;
 
-        const isDataLoading = access.processing || dnsConfig.processingGetConfig;
+    useEffect(() => {
+        dispatch(getAccessList());
+        dispatch(getDnsConfig());
+    }, []);
 
-        return (
-            <Fragment>
-                <PageTitle title={t('dns_settings')} />
-                {isDataLoading
-                    ? <Loading />
-                    : <Fragment>
-                        <Upstream
-                            processingTestUpstream={settings.processingTestUpstream}
-                            testUpstream={testUpstream}
-                            dnsConfig={dnsConfig}
-                            setDnsConfig={setDnsConfig}
-                        />
-                        <Config
-                            dnsConfig={dnsConfig}
-                            setDnsConfig={setDnsConfig}
-                        />
-                        <Access access={access} setAccessList={setAccessList} />
-                    </Fragment>}
-            </Fragment>
-        );
-    }
-}
-
-Dns.propTypes = {
-    settings: PropTypes.object.isRequired,
-    testUpstream: PropTypes.func.isRequired,
-    getAccessList: PropTypes.func.isRequired,
-    setAccessList: PropTypes.func.isRequired,
-    access: PropTypes.object.isRequired,
-    dnsConfig: PropTypes.object.isRequired,
-    setDnsConfig: PropTypes.func.isRequired,
-    getDnsConfig: PropTypes.func.isRequired,
-    t: PropTypes.func.isRequired,
+    return <>
+        <PageTitle title={t('dns_settings')} />
+        {isDataLoading
+            ? <Loading />
+            : <>
+                <Upstream />
+                <Config />
+                <CacheConfig />
+                <Access />
+            </>}
+    </>;
 };
 
-export default withTranslation()(Dns);
+export default Dns;

@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
-	"time"
 
 	"github.com/AdguardTeam/AdGuardHome/dhcpd"
 	"github.com/AdguardTeam/AdGuardHome/dnsfilter"
@@ -39,10 +38,6 @@ type configuration struct {
 	// Raw file data to avoid re-reading of configuration file
 	// It's reset after config is parsed
 	fileData []byte
-
-	// cached version.json to avoid hammering github.io for each page reload
-	versionCheckJSON     []byte
-	versionCheckLastTime time.Time
 
 	BindHost     string `yaml:"bind_host"`     // BindHost is the IP address of the HTTP server to bind to
 	BindPort     int    `yaml:"bind_port"`     // BindPort is the port the HTTP server
@@ -132,10 +127,6 @@ var config = configuration{
 		PortHTTPS:      443,
 		PortDNSOverTLS: 853, // needs to be passed through to dnsproxy
 	},
-	DHCP: dhcpd.ServerConfig{
-		LeaseDuration: 86400,
-		ICMPTimeout:   1000,
-	},
 	logSettings: logSettings{
 		LogCompress:   false,
 		LogLocalTime:  false,
@@ -161,6 +152,10 @@ func initConfig() {
 	config.DNS.DnsfilterConf.ParentalCacheSize = 1 * 1024 * 1024
 	config.DNS.DnsfilterConf.CacheTime = 30
 	config.Filters = defaultFilters()
+
+	config.DHCP.Conf4.LeaseDuration = 86400
+	config.DHCP.Conf4.ICMPTimeout = 1000
+	config.DHCP.Conf6.LeaseDuration = 86400
 }
 
 // getConfigFilename returns path to the current config file

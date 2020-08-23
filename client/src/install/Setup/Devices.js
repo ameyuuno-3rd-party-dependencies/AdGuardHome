@@ -8,6 +8,7 @@ import flow from 'lodash/flow';
 import Guide from '../../components/ui/Guide';
 import Controls from './Controls';
 import AddressList from './AddressList';
+import { FORM_NAME } from '../../helpers/constants';
 
 let Devices = (props) => (
     <div className="setup__step">
@@ -25,7 +26,7 @@ let Devices = (props) => (
                         interfaces={props.interfaces}
                         address={props.dnsIp}
                         port={props.dnsPort}
-                        isDns={true}
+                        isDns
                     />
                 </div>
             </div>
@@ -56,7 +57,7 @@ Devices = connect((state) => {
 export default flow([
     withTranslation(),
     reduxForm({
-        form: 'install',
+        form: FORM_NAME.INSTALL,
         destroyOnUnmount: false,
         forceUnregisterOnUnmount: true,
     }),

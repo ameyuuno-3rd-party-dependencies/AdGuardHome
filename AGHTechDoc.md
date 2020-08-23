@@ -12,6 +12,7 @@ Contents:
 * Updating
 	* Get version command
 	* Update command
+* API: Get global status
 * TLS
 	* API: Get TLS configuration
 	* API: Set TLS configuration
@@ -22,7 +23,9 @@ Contents:
 	* Update client
 	* Delete client
 	* API: Find clients by IP
-* Enable DHCP server
+* DHCP server
+	* DHCP server in DNS
+	* "Show DHCP interfaces" command
 	* "Show DHCP status" command
 	* "Check DHCP" command
 	* "Enable DHCP" command
@@ -64,6 +67,7 @@ Contents:
 	* API: Log in
 	* API: Log out
 	* API: Get current user info
+* Safe services
 
 
 ## Relations between subsystems
@@ -344,9 +348,13 @@ Response:
 
 If `can_autoupdate` is true, then the server can automatically upgrade to a new version.
 
-Response with empty body:
+Response when auto-update is disabled by command-line argument:
 
 	200 OK
+
+	{
+		"disabled":true
+	}
 
 It means that update check is disabled by user.  UI should do nothing.
 
@@ -370,9 +378,31 @@ Error response:
 UI shows error message "Auto-update has failed"
 
 
-## Enable DHCP server
+## API: Get global status
 
-Algorithm:
+Request:
+
+	GET /control/status
+
+Response:
+
+	200 OK
+
+	{
+	"dns_addresses":["..."],
+	"dns_port":53,
+	"http_port":3000,
+	"language":"en",
+	"protection_enabled":true,
+	"running":true,
+	"dhcp_available":true,
+	"version":"undefined"
+	}
+
+
+## DHCP server
+
+Enable DHCP server algorithm:
 
 * UI shows DHCP configuration screen with "Enabled DHCP" button disabled, and "Check DHCP" button enabled
 * User clicks on "Check DHCP"; UI sends request to server
@@ -382,6 +412,44 @@ Algorithm:
 * User clicks on "Enable DHCP"; UI sends request to server
 * Server sets a static IP (if necessary), enables DHCP server, sends the status back to UI
 * UI shows the status
+
+
+### DHCP server in DNS
+
+DHCP leases are used in several ways by DNS module.
+
+* For "A" DNS reqeust we reply with an IP address leased by our DHCP server.
+
+		< A bills-notebook.lan.
+		> A bills-notebook.lan. = 192.168.1.100
+
+* For "PTR" DNS request we reply with a hostname from an active DHCP lease.
+
+		< PTR 100.1.168.192.in-addr.arpa.
+		> PTR 100.1.168.192.in-addr.arpa. = bills-notebook.
+
+
+### "Show DHCP interfaces" command
+
+Request:
+
+	GET /control/dhcp/interfaces
+
+Response:
+
+	200 OK
+
+	{
+		"iface_name":{
+			"name":"iface_name",
+			"hardware_address":"...",
+			"ipv4_addresses":["ipv4 addr", ...],
+			"ipv6_addresses":["ipv6 addr", ...],
+			"gateway_ip":"...",
+			"flags":"up|broadcast|multicast"
+		}
+		...
+	}
 
 
 ### "Show DHCP status" command
@@ -395,16 +463,19 @@ Response:
 	200 OK
 
 	{
-		"config":{
-			"enabled":false,
-			"interface_name":"...",
+		"enabled":false,
+		"interface_name":"...",
+		"v4":{
 			"gateway_ip":"...",
 			"subnet_mask":"...",
-			"range_start":"...",
+			"range_start":"...", // if empty: DHCPv4 won't be enabled
 			"range_end":"...",
 			"lease_duration":60,
-			"icmp_timeout_msec":0
 		},
+		"v6":{
+			"range_start":"...", // if empty: DHCPv6 won't be enabled
+			"lease_duration":60,
+		}
 		"leases":[
 			{"ip":"...","mac":"...","hostname":"...","expires":"..."}
 			...
@@ -429,13 +500,21 @@ Response:
 	200 OK
 
 	{
-		"other_server": {
-			"found": "yes|no|error",
-			"error": "Error message", // set if found=error
-		},
-		"static_ip": {
-			"static": "yes|no|error",
-			"ip": "<Current dynamic IP address>", // set if static=no
+		v4: {
+			"other_server": {
+				"found": "yes|no|error",
+				"error": "Error message", // set if found=error
+			},
+			"static_ip": {
+				"static": "yes|no|error",
+				"ip": "<Current dynamic IP address>", // set if static=no
+			}
+		}
+		v6: {
+			"other_server": {
+				"found": "yes|no|error",
+				"error": "Error message", // set if found=error
+			},
 		}
 	}
 
@@ -463,14 +542,19 @@ Request:
 	POST /control/dhcp/set_config
 
 	{
-		"enabled":true,
-		"interface_name":"vboxnet0",
+	"enabled":true,
+	"interface_name":"vboxnet0",
+	"v4":{
 		"gateway_ip":"192.169.56.1",
 		"subnet_mask":"255.255.255.0",
-		"range_start":"192.169.56.3",
-		"range_end":"192.169.56.3",
+		"range_start":"192.169.56.100",
+		"range_end":"192.169.56.200", // Note: first 3 octects must match "range_start"
 		"lease_duration":60,
-		"icmp_timeout_msec":0
+	},
+	"v6":{
+		"range_start":"...",
+		"lease_duration":60,
+	}
 	}
 
 Response:
@@ -478,6 +562,10 @@ Response:
 	200 OK
 
 	OK
+
+For v4, if range_start = "1.2.3.4", the range_end must be "1.2.3.X" where X > 4.
+
+For v6, if range_start = "2001::1", the last IP is "2001:ff".
 
 
 ### Static IP check/set
@@ -893,8 +981,10 @@ Response:
 		"edns_cs_enabled": true | false,
 		"dnssec_enabled": true | false
 		"disable_ipv6": true | false,
-		"fastest_addr": true | false, // use Fastest Address algorithm
-		"parallel_requests": true | false, // send DNS requests to all upstream servers at once
+		"upstream_mode": "" | "parallel" | "fastest_addr"
+		"cache_size": 1234, // in bytes
+		"cache_ttl_min": 1234, // in seconds
+		"cache_ttl_max": 1234, // in seconds
 	}
 
 
@@ -916,8 +1006,10 @@ Request:
 		"edns_cs_enabled": true | false,
 		"dnssec_enabled": true | false
 		"disable_ipv6": true | false,
-		"fastest_addr": true | false, // use Fastest Address algorithm
-		"parallel_requests": true | false, // send DNS requests to all upstream servers at once
+		"upstream_mode": "" | "parallel" | "fastest_addr"
+		"cache_size": 1234, // in bytes
+		"cache_ttl_min": 1234, // in seconds
+		"cache_ttl_max": 1234, // in seconds
 	}
 
 Response:
@@ -981,6 +1073,110 @@ Response:
 
 This section allows the administrator to easily configure custom DNS response for a specific domain name.
 A, AAAA and CNAME records are supported.
+
+Syntax:
+
+	key -> value
+
+where `key` is a host name or a wild card that matches Question in DNS request
+and `value` is either:
+* IPv4 address: use this IP in A response
+* IPv6 address: use this IP in AAAA response
+* canonical name: add CNAME record
+* "<key>": CNAME exception - pass request to upstream
+* "A": A exception - pass A request to upstream
+* "AAAA": AAAA exception - pass AAAA request to upstream
+
+
+#### Example: A record
+
+	host.com -> 1.2.3.4
+
+Response:
+
+	A:
+		A = 1.2.3.4
+	AAAA:
+		<empty>
+
+#### Example: AAAA record
+
+	host.com -> ::1
+
+Response:
+
+	A:
+		<empty>
+	AAAA:
+		AAAA = ::1
+
+#### Example: CNAME record
+
+	sub.host.com -> host.com
+
+Response:
+
+	A:
+		CNAME = host.com
+		A = <IPv4 address of host.com>
+	AAAA:
+		CNAME = host.com
+		AAAA = <IPv6 address of host.com>
+
+#### Example: CNAME+A records
+
+	sub.host.com -> host.com
+	host.com -> 1.2.3.4
+
+Response:
+
+	A:
+		CNAME = host.com
+		A = 1.2.3.4
+	AAAA:
+		CNAME = host.com
+
+#### Example: Wildcard CNAME+A record with CNAME exception
+
+	*.host.com -> 1.2.3.4
+	pass.host.com -> pass.host.com
+
+Response to `my.host.com`:
+
+	A:
+		A = 1.2.3.4
+	AAAA:
+		<empty>
+
+Response to `pass.host.com`:
+
+	A:
+		A = <IPv4 address of pass.host.com>
+	AAAA:
+		AAAA = <IPv6 address of pass.host.com>
+
+#### Example: A record with AAAA exception
+
+	host.com -> 1.2.3.4
+	host.com -> AAAA
+
+Response:
+
+	A:
+		A = 1.2.3.4
+	AAAA:
+		AAAA = <IPv6 address of host.com>
+
+#### Example: pass A only
+
+	host.com -> A
+
+Response:
+
+	A:
+		A = <IPv4 address of host.com>
+	AAAA:
+		<empty>
 
 
 ### API: List rewrite entries
@@ -1200,8 +1396,9 @@ When a new DNS request is received and processed, we store information about thi
 	"QH":"...", // target host name without the last dot
 	"QT":"...", // question type
 	"QC":"...", // question class
-	"Answer":"...",
-	"OrigAnswer":"...",
+	"CP":"" | "doh", // client connection protocol
+	"Answer":"base64 data",
+	"OrigAnswer":"base64 data",
 	"Result":{
 		"IsFiltered":true,
 		"Reason":3,
@@ -1234,16 +1431,28 @@ Request:
 
 	GET /control/querylog
 	?older_than=2006-01-02T15:04:05.999999999Z07:00
-	&filter_domain=...
-	&filter_client=...
-	&filter_question_type=A | AAAA
-	&filter_response_status= | filtered
+	&search=...
+	&response_status="..."
 
-`older_than` setting is used for paging.  UI uses an empty value for `older_than` on the first request and gets the latest log entries.  To get the older entries, UI sets `older_than` to the `oldest` value from the server's response.
+`older_than` setting is used for paging.  UI uses an empty value for `older_than` on the first request and gets the latest log entries. To get the older entries, UI sets `older_than` to the `oldest` value from the server's response.
 
-If "filter" settings are set, server returns only entries that match the specified request.
+If search settings are set, server returns only entries that match the specified request.
 
-For `filter.domain` and `filter.client` the server matches substrings by default: `adguard.com` matches `www.adguard.com`.  Strict matching can be enabled by enclosing the value in double quotes: `"adguard.com"` matches `adguard.com` but doesn't match `www.adguard.com`.
+`search`:
+match by domain name or client IP address.
+The server matches substrings by default: e.g. `adguard.com` matches `www.adguard.com`.
+Strict matching can be enabled by enclosing the value in double quotes: e.g. `"adguard.com"` matches `adguard.com` but doesn't match `www.adguard.com`.
+
+`response_status`:
+* all
+* filtered             - all kinds of filtering
+* blocked              - blocked or blocked service
+* blocked_safebrowsing - blocked by safebrowsing
+* blocked_parental     - blocked by parental control
+* whitelisted          - whitelisted
+* rewritten            - all kinds of rewrites
+* safe_search          - enforced safe search
+* processed            - not blocked, not white-listed entries
 
 Response:
 
@@ -1266,8 +1475,10 @@ Response:
 			}
 			...
 		],
+		"upstream":"...", // Upstream URL starting with tcp://, tls://, https://, or with an IP address
 		"answer_dnssec": true,
 		"client":"127.0.0.1",
+		"client_proto": "" (plain) | "doh" | "dot",
 		"elapsedMs":"0.098403",
 		"filterId":1,
 		"question":{
@@ -1286,6 +1497,8 @@ Response:
 	}
 
 The most recent entries are at the top of list.
+
+If there are no more older entries, `"oldest":""` is returned.
 
 
 ### API: Set querylog parameters
@@ -1618,3 +1831,40 @@ Response:
 	}
 
 If no client is configured then authentication is disabled and server sends an empty response.
+
+
+### Safe services
+
+Check if host name is blocked by SB/PC service:
+
+* For each host name component, search for the result in cache by the first 2 bytes of SHA-256 hashes of host name components (max. is 4, i.e. sub2.sub1.host.com), excluding TLD:
+
+		hashes[] = cache_search(sha256(host.com)[0..1])
+		...
+
+	If hash prefix is found, search for a full hash sum in the cached data.
+	If found, the host is blocked.
+	If not found, the host is not blocked - don't request data for this prefix from the Family server again.
+	If hash prefix is not found, request data for this prefix from the Family server.
+
+* Prepare query string which is generated from the first 2 bytes (converted to a 4-character string) of SHA-256 hashes of host name components (max. is 4, i.e. sub2.sub1.host.com), excluding TLD:
+
+		qs = ... + string(sha256(sub.host.com)[0..1]) + "." + string(sha256(host.com)[0..1]) + ".sb.dns.adguard.com."
+
+	For PC `.pc.dns.adguard.com` suffix is used.
+
+* Send TXT query to Family server, receive response which contains the array of complete hash sums of the blocked hosts
+
+* Check if one of received hash sums (`hashes[]`) matches hash sums for our host name
+
+		hashes[0] <> sha256(host.com)
+		hashes[0] <> sha256(sub.host.com)
+		hashes[1] <> sha256(host.com)
+		hashes[1] <> sha256(sub.host.com)
+		...
+
+* Store all received hash sums in cache:
+
+		sha256(host.com)[0..1] -> hashes[0],hashes[1],...
+		sha256(sub.host.com)[0..1] -> hashes[2],...
+		...

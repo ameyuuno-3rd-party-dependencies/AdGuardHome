@@ -7,16 +7,15 @@ import flow from 'lodash/flow';
 
 import {
     renderInputField,
-    renderSelectField,
+    renderCheckboxField,
     renderRadioField,
     toNumber,
-    port,
-    portTLS,
-    isSafePort,
 } from '../../../helpers/form';
+import { validateIsSafePort, validatePort, validatePortTLS } from '../../../helpers/validators';
 import i18n from '../../../i18n';
 import KeyStatus from './KeyStatus';
 import CertificateStatus from './CertificateStatus';
+import { DNS_OVER_TLS_PORT, FORM_NAME, STANDARD_HTTPS_PORT } from '../../../helpers/constants';
 
 const validate = (values) => {
     const errors = {};
@@ -37,15 +36,16 @@ const clearFields = (change, setTlsConfig, t) => {
         certificate_chain: '',
         private_key_path: '',
         certificate_path: '',
-        port_https: 443,
-        port_dns_over_tls: 853,
+        port_https: STANDARD_HTTPS_PORT,
+        port_dns_over_tls: DNS_OVER_TLS_PORT,
         server_name: '',
         force_https: false,
         enabled: false,
     };
     // eslint-disable-next-line no-alert
     if (window.confirm(t('encryption_reset'))) {
-        Object.keys(fields).forEach((field) => change(field, fields[field]));
+        Object.keys(fields)
+            .forEach((field) => change(field, fields[field]));
         setTlsConfig(fields);
     }
 };
@@ -96,7 +96,7 @@ let Form = (props) => {
                         <Field
                             name="enabled"
                             type="checkbox"
-                            component={renderSelectField}
+                            component={renderCheckboxField}
                             placeholder={t('encryption_enable')}
                             onChange={handleChange}
                         />
@@ -133,7 +133,7 @@ let Form = (props) => {
                         <Field
                             name="force_https"
                             type="checkbox"
-                            component={renderSelectField}
+                            component={renderCheckboxField}
                             placeholder={t('encryption_redirect')}
                             onChange={handleChange}
                             disabled={!isEnabled}
@@ -157,7 +157,7 @@ let Form = (props) => {
                             type="number"
                             className="form-control"
                             placeholder={t('encryption_https')}
-                            validate={[port, isSafePort]}
+                            validate={[validatePort, validateIsSafePort]}
                             normalize={toNumber}
                             onChange={handleChange}
                             disabled={!isEnabled}
@@ -179,7 +179,7 @@ let Form = (props) => {
                             type="number"
                             className="form-control"
                             placeholder={t('encryption_dot')}
-                            validate={[portTLS]}
+                            validate={[validatePortTLS]}
                             normalize={toNumber}
                             onChange={handleChange}
                             disabled={!isEnabled}
@@ -394,7 +394,7 @@ Form.propTypes = {
     privateKeySource: PropTypes.string,
 };
 
-const selector = formValueSelector('encryptionForm');
+const selector = formValueSelector(FORM_NAME.ENCRYPTION);
 
 Form = connect((state) => {
     const isEnabled = selector(state, 'enabled');
@@ -418,7 +418,7 @@ Form = connect((state) => {
 export default flow([
     withTranslation(),
     reduxForm({
-        form: 'encryptionForm',
+        form: FORM_NAME.ENCRYPTION,
         validate,
     }),
 ])(Form);

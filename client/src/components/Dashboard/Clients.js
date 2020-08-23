@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react';
+import React from 'react';
 import ReactTable from 'react-table';
 import PropTypes from 'prop-types';
 import { Trans, withTranslation } from 'react-i18next';
@@ -6,7 +6,7 @@ import { Trans, withTranslation } from 'react-i18next';
 import Card from '../ui/Card';
 import Cell from '../ui/Cell';
 
-import { getPercent, getIpMatchListStatus } from '../../helpers/helpers';
+import { getPercent, getIpMatchListStatus, sortIp } from '../../helpers/helpers';
 import { IP_MATCH_LIST_STATUS, STATUS_COLORS } from '../../helpers/constants';
 import { formatClientCell } from '../../helpers/formatClientCell';
 
@@ -25,24 +25,24 @@ const countCell = (dnsQueries) => function cell(row) {
     const percent = getPercent(dnsQueries, value);
     const percentColor = getClientsPercentColor(percent);
 
-    return <Cell value={value} percent={percent} color={percentColor} />;
+    return <Cell value={value} percent={percent} color={percentColor} search={row.original.ip} />;
 };
 
 const renderBlockingButton = (ipMatchListStatus, ip, handleClick, processing) => {
     const buttonProps = ipMatchListStatus === IP_MATCH_LIST_STATUS.NOT_FOUND
         ? {
             className: 'btn-outline-danger',
-            text: 'block_btn',
+            text: 'block',
             type: 'block',
         }
         : {
             className: 'btn-outline-secondary',
-            text: 'unblock_btn',
+            text: 'unblock',
             type: 'unblock',
         };
 
     return (
-        <div className="table__action">
+        <div className="table__action button__action">
             <button
                 type="button"
                 className={`btn btn-sm ${buttonProps.className}`}
@@ -60,13 +60,13 @@ const clientCell = (t, toggleClientStatus, processing, disallowedClients) => fun
     const ipMatchListStatus = getIpMatchListStatus(value, disallowedClients);
 
     return (
-        <Fragment>
+        <>
             <div className="logs__row logs__row--overflow logs__row--column">
-                {formatClientCell(row, t)}
+                {formatClientCell(row, true, false)}
             </div>
             {ipMatchListStatus !== IP_MATCH_LIST_STATUS.CIDR
             && renderBlockingButton(ipMatchListStatus, value, toggleClientStatus, processing)}
-        </Fragment>
+        </>
     );
 };
 
@@ -99,7 +99,7 @@ const Clients = ({
                 {
                     Header: 'IP',
                     accessor: 'ip',
-                    sortMethod: (a, b) => parseInt(a.replace(/\./g, ''), 10) - parseInt(b.replace(/\./g, ''), 10),
+                    sortMethod: sortIp,
                     Cell: clientCell(t, toggleClientStatus, processingAccessSet, disallowedClients),
                 },
                 {

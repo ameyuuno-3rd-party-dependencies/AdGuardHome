@@ -33,8 +33,10 @@ type dnsConfigJSON struct {
 	EDNSCSEnabled     bool   `json:"edns_cs_enabled"`
 	DNSSECEnabled     bool   `json:"dnssec_enabled"`
 	DisableIPv6       bool   `json:"disable_ipv6"`
-	FastestAddr       bool   `json:"fastest_addr"`
-	ParallelRequests  bool   `json:"parallel_requests"`
+	UpstreamMode      string `json:"upstream_mode"`
+	CacheSize         uint32 `json:"cache_size"`
+	CacheMinTTL       uint32 `json:"cache_ttl_min"`
+	CacheMaxTTL       uint32 `json:"cache_ttl_max"`
 }
 
 func (s *Server) handleGetConfig(w http.ResponseWriter, r *http.Request) {
@@ -51,8 +53,14 @@ func (s *Server) handleGetConfig(w http.ResponseWriter, r *http.Request) {
 	resp.EDNSCSEnabled = s.conf.EnableEDNSClientSubnet
 	resp.DNSSECEnabled = s.conf.EnableDNSSEC
 	resp.DisableIPv6 = s.conf.AAAADisabled
-	resp.FastestAddr = s.conf.FastestAddr
-	resp.ParallelRequests = s.conf.AllServers
+	resp.CacheSize = s.conf.CacheSize
+	resp.CacheMinTTL = s.conf.CacheMinTTL
+	resp.CacheMaxTTL = s.conf.CacheMaxTTL
+	if s.conf.FastestAddr {
+		resp.UpstreamMode = "fastest_addr"
+	} else if s.conf.AllServers {
+		resp.UpstreamMode = "parallel"
+	}
 	s.RUnlock()
 
 	js, err := json.Marshal(resp)
@@ -85,6 +93,18 @@ func checkBlockingMode(req dnsConfigJSON) bool {
 	return true
 }
 
+// Validate bootstrap server address
+func checkBootstrap(addr string) error {
+	if addr == "" { // additional check is required because NewResolver() allows empty address
+		return fmt.Errorf("invalid bootstrap server address: empty")
+	}
+	_, err := upstream.NewResolver(addr, 0)
+	if err != nil {
+		return fmt.Errorf("invalid bootstrap server address: %s", err)
+	}
+	return nil
+}
+
 // nolint(gocyclo) - we need to check each JSON field separately
 func (s *Server) handleSetConfig(w http.ResponseWriter, r *http.Request) {
 	req := dnsConfigJSON{}
@@ -105,9 +125,9 @@ func (s *Server) handleSetConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if js.Exists("bootstrap_dns") {
-		for _, host := range req.Bootstraps {
-			if err := checkPlainDNS(host); err != nil {
-				httpError(r, w, http.StatusBadRequest, "%s can not be used as bootstrap dns cause: %s", host, err)
+		for _, boot := range req.Bootstraps {
+			if err := checkBootstrap(boot); err != nil {
+				httpError(r, w, http.StatusBadRequest, "%s can not be used as bootstrap dns cause: %s", boot, err)
 				return
 			}
 		}
@@ -115,6 +135,17 @@ func (s *Server) handleSetConfig(w http.ResponseWriter, r *http.Request) {
 
 	if js.Exists("blocking_mode") && !checkBlockingMode(req) {
 		httpError(r, w, http.StatusBadRequest, "blocking_mode: incorrect value")
+		return
+	}
+
+	if js.Exists("upstream_mode") &&
+		!(req.UpstreamMode == "" || req.UpstreamMode == "fastest_addr" || req.UpstreamMode == "parallel") {
+		httpError(r, w, http.StatusBadRequest, "upstream_mode: incorrect value")
+		return
+	}
+
+	if req.CacheMinTTL > req.CacheMaxTTL {
+		httpError(r, w, http.StatusBadRequest, "cache_ttl_min must be less or equal than cache_ttl_max")
 		return
 	}
 
@@ -169,12 +200,34 @@ func (s *Server) handleSetConfig(w http.ResponseWriter, r *http.Request) {
 		s.conf.AAAADisabled = req.DisableIPv6
 	}
 
-	if js.Exists("fastest_addr") {
-		s.conf.FastestAddr = req.FastestAddr
+	if js.Exists("cache_size") {
+		s.conf.CacheSize = req.CacheSize
+		restart = true
 	}
 
-	if js.Exists("parallel_requests") {
-		s.conf.AllServers = req.ParallelRequests
+	if js.Exists("cache_ttl_min") {
+		s.conf.CacheMinTTL = req.CacheMinTTL
+		restart = true
+	}
+
+	if js.Exists("cache_ttl_max") {
+		s.conf.CacheMaxTTL = req.CacheMaxTTL
+		restart = true
+	}
+
+	if js.Exists("upstream_mode") {
+		s.conf.FastestAddr = false
+		s.conf.AllServers = false
+		switch req.UpstreamMode {
+		case "":
+			//
+
+		case "parallel":
+			s.conf.AllServers = true
+
+		case "fastest_addr":
+			s.conf.FastestAddr = true
+		}
 	}
 
 	s.Unlock()
@@ -385,6 +438,11 @@ func checkDNS(input string, bootstrap []string) error {
 	return nil
 }
 
+// Control flow:
+// web
+//  -> dnsforward.handleDOH -> dnsforward.ServeHTTP
+//  -> proxy.ServeHTTP -> proxy.handleDNSRequest
+//  -> dnsforward.handleDNSRequest
 func (s *Server) handleDOH(w http.ResponseWriter, r *http.Request) {
 	if !s.conf.TLSAllowUnencryptedDOH && r.TLS == nil {
 		httpError(r, w, http.StatusNotFound, "Not Found")

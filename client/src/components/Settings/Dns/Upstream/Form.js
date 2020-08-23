@@ -1,14 +1,15 @@
 import React from 'react';
-import { connect } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import PropTypes from 'prop-types';
-import { Field, reduxForm, formValueSelector } from 'redux-form';
-import { Trans, withTranslation } from 'react-i18next';
-import flow from 'lodash/flow';
+import { Field, reduxForm } from 'redux-form';
+import { Trans, useTranslation } from 'react-i18next';
 import classnames from 'classnames';
 
 import Examples from './Examples';
-import { renderRadioField } from '../../../../helpers/form';
-import { DNS_REQUEST_OPTIONS } from '../../../../helpers/constants';
+import { renderRadioField, renderTextareaField } from '../../../../helpers/form';
+import { DNS_REQUEST_OPTIONS, FORM_NAME } from '../../../../helpers/constants';
+import { testUpstream } from '../../../../actions';
+import { removeEmptyLines } from '../../../../helpers/helpers';
 
 const getInputFields = () => [{
     // eslint-disable-next-line react/display-name
@@ -17,20 +18,29 @@ const getInputFields = () => [{
     </label>,
     name: 'upstream_dns',
     type: 'text',
-    component: 'textarea',
+    component: renderTextareaField,
     className: 'form-control form-control--textarea font-monospace',
     placeholder: 'upstream_dns',
+    normalizeOnBlur: removeEmptyLines,
 },
 {
-    name: 'dnsRequestOption',
+    name: 'upstream_mode',
     type: 'radio',
-    value: DNS_REQUEST_OPTIONS.PARALLEL_REQUESTS,
+    value: DNS_REQUEST_OPTIONS.LOAD_BALANCING,
+    component: renderRadioField,
+    subtitle: 'load_balancing_desc',
+    placeholder: 'load_balancing',
+},
+{
+    name: 'upstream_mode',
+    type: 'radio',
+    value: DNS_REQUEST_OPTIONS.PARALLEL,
     component: renderRadioField,
     subtitle: 'upstream_parallel',
     placeholder: 'parallel_requests',
 },
 {
-    name: 'dnsRequestOption',
+    name: 'upstream_mode',
     type: 'radio',
     value: DNS_REQUEST_OPTIONS.FASTEST_ADDR,
     component: renderRadioField,
@@ -38,22 +48,23 @@ const getInputFields = () => [{
     placeholder: 'fastest_addr',
 }];
 
-let Form = (props) => {
-    const {
-        t,
-        handleSubmit,
-        testUpstream,
-        submitting,
-        invalid,
-        processingSetConfig,
-        processingTestUpstream,
+const Form = ({
+    submitting, invalid, processingSetConfig, processingTestUpstream, handleSubmit,
+}) => {
+    const dispatch = useDispatch();
+    const { t } = useTranslation();
+    const upstream_dns = useSelector((store) => store.form[FORM_NAME.UPSTREAM].values.upstream_dns);
+    const bootstrap_dns = useSelector(
+        (store) => store.form[FORM_NAME.UPSTREAM].values.bootstrap_dns,
+    );
+
+    const handleUpstreamTest = () => dispatch(testUpstream({
         upstream_dns,
         bootstrap_dns,
-    } = props;
+    }));
 
-    const testButtonClass = classnames({
-        'btn btn-primary btn-standard mr-2': true,
-        'btn btn-primary btn-standard mr-2 btn-loading': processingTestUpstream,
+    const testButtonClass = classnames('btn btn-primary btn-standard mr-2', {
+        'btn-loading': processingTestUpstream,
     });
 
     const INPUT_FIELDS = getInputFields();
@@ -61,7 +72,8 @@ let Form = (props) => {
     return <form onSubmit={handleSubmit}>
         <div className="row">
             {INPUT_FIELDS.map(({
-                name, component, type, className, placeholder, getTitle, subtitle, disabled, value,
+                name, component, type, className, placeholder,
+                getTitle, subtitle, disabled, value, normalizeOnBlur,
             }) => <div className="col-12 mb-4" key={placeholder}>
                 {typeof getTitle === 'function' && getTitle()}
                 <Field
@@ -74,6 +86,7 @@ let Form = (props) => {
                     placeholder={t(placeholder)}
                     subtitle={t(subtitle)}
                     disabled={processingSetConfig || processingTestUpstream || disabled}
+                    normalizeOnBlur={normalizeOnBlur}
                 />
             </div>)}
             <div className="col-12">
@@ -93,11 +106,12 @@ let Form = (props) => {
                 <Field
                     id="bootstrap_dns"
                     name="bootstrap_dns"
-                    component="textarea"
+                    component={renderTextareaField}
                     type="text"
                     className="form-control form-control--textarea form-control--textarea-small font-monospace"
                     placeholder={t('bootstrap_dns')}
                     disabled={processingSetConfig}
+                    normalizeOnBlur={removeEmptyLines}
                 />
             </div>
         </div>
@@ -106,11 +120,7 @@ let Form = (props) => {
                 <button
                     type="button"
                     className={testButtonClass}
-                    onClick={() => testUpstream({
-                        upstream_dns,
-                        bootstrap_dns,
-                    })
-                    }
+                    onClick={handleUpstreamTest}
                     disabled={!upstream_dns || processingTestUpstream}
                 >
                     <Trans>test_upstream_btn</Trans>
@@ -131,7 +141,6 @@ let Form = (props) => {
 
 Form.propTypes = {
     handleSubmit: PropTypes.func,
-    testUpstream: PropTypes.func,
     submitting: PropTypes.bool,
     invalid: PropTypes.bool,
     initialValues: PropTypes.object,
@@ -139,24 +148,6 @@ Form.propTypes = {
     bootstrap_dns: PropTypes.string,
     processingTestUpstream: PropTypes.bool,
     processingSetConfig: PropTypes.bool,
-    t: PropTypes.func,
 };
 
-const selector = formValueSelector('upstreamForm');
-
-Form = connect((state) => {
-    const upstream_dns = selector(state, 'upstream_dns');
-    const bootstrap_dns = selector(state, 'bootstrap_dns');
-
-    return {
-        upstream_dns,
-        bootstrap_dns,
-    };
-})(Form);
-
-export default flow([
-    withTranslation(),
-    reduxForm({
-        form: 'upstreamForm',
-    }),
-])(Form);
+export default reduxForm({ form: FORM_NAME.UPSTREAM })(Form);

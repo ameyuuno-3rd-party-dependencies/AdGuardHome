@@ -4,10 +4,11 @@ import { Trans, withTranslation } from 'react-i18next';
 import ReactTable from 'react-table';
 
 import { MODAL_TYPE } from '../../../helpers/constants';
-import { normalizeTextarea } from '../../../helpers/helpers';
+import { splitByNewLine } from '../../../helpers/helpers';
 import Card from '../../ui/Card';
 import Modal from './Modal';
 import CellWrap from '../../ui/CellWrap';
+import LogsSearchLink from '../../ui/LogsSearchLink';
 
 class ClientsTable extends Component {
     handleFormAdd = (values) => {
@@ -29,7 +30,7 @@ class ClientsTable extends Component {
             }
 
             if (values.upstreams && typeof values.upstreams === 'string') {
-                config.upstreams = normalizeTextarea(values.upstreams);
+                config.upstreams = splitByNewLine(values.upstreams);
             } else {
                 config.upstreams = [];
             }
@@ -41,7 +42,7 @@ class ClientsTable extends Component {
             }
         }
 
-        if (this.props.modalType === MODAL_TYPE.EDIT) {
+        if (this.props.modalType === MODAL_TYPE.EDIT_FILTERS) {
             this.handleFormUpdate(config, this.props.modalClientName);
         } else {
             this.handleFormAdd(config);
@@ -49,7 +50,10 @@ class ClientsTable extends Component {
     };
 
     getOptionsWithLabels = (options) => (
-        options.map((option) => ({ value: option, label: option }))
+        options.map((option) => ({
+            value: option,
+            label: option,
+        }))
     );
 
     getClient = (name, clients) => {
@@ -91,7 +95,7 @@ class ClientsTable extends Component {
                 const { value } = row;
 
                 return (
-                    <div className="logs__row logs__row--overflow">
+                    <div className="logs__row o-hidden">
                         <span className="logs__text">
                             {value.map((address) => (
                                 <div key={address} title={address}>
@@ -121,7 +125,7 @@ class ClientsTable extends Component {
                 );
 
                 return (
-                    <div className="logs__row logs__row--overflow">
+                    <div className="logs__row o-hidden">
                         <div className="logs__text">{title}</div>
                     </div>
                 );
@@ -167,7 +171,7 @@ class ClientsTable extends Component {
                 );
 
                 return (
-                    <div className="logs__row logs__row--overflow">
+                    <div className="logs__row o-hidden">
                         <div className="logs__text">{title}</div>
                     </div>
                 );
@@ -185,7 +189,7 @@ class ClientsTable extends Component {
                 }
 
                 return (
-                    <div className="logs__row logs__row--overflow">
+                    <div className="logs__row o-hidden">
                         <span className="logs__text">
                             {value.map((tag) => (
                                 <div key={tag} title={tag} className="small">
@@ -203,7 +207,15 @@ class ClientsTable extends Component {
             accessor: (row) => this.props.normalizedTopClients.configured[row.name] || 0,
             sortMethod: (a, b) => b - a,
             minWidth: 120,
-            Cell: CellWrap,
+            Cell: (row) => {
+                const content = CellWrap(row);
+
+                if (!row.value) {
+                    return content;
+                }
+
+                return <LogsSearchLink search={row.original.ids[0]}>{content}</LogsSearchLink>;
+            },
         },
         {
             Header: this.props.t('actions_table_header'),
@@ -221,7 +233,7 @@ class ClientsTable extends Component {
                             type="button"
                             className="btn btn-icon btn-outline-primary btn-sm mr-2"
                             onClick={() => toggleClientModal({
-                                type: MODAL_TYPE.EDIT,
+                                type: MODAL_TYPE.EDIT_FILTERS,
                                 name: clientName,
                             })
                             }
@@ -282,26 +294,25 @@ class ClientsTable extends Component {
                             },
                         ]}
                         className="-striped -highlight card-table-overflow"
-                        showPagination={true}
+                        showPagination
                         defaultPageSize={10}
                         minRows={5}
+                        ofText="/"
                         previousText={t('previous_btn')}
                         nextText={t('next_btn')}
-                        loadingText={t('loading_table_status')}
                         pageText={t('page_table_footer_text')}
-                        ofText="/"
                         rowsText={t('rows_table_footer_text')}
+                        loadingText={t('loading_table_status')}
                         noDataText={t('clients_not_found')}
                     />
                     <button
                         type="button"
                         className="btn btn-success btn-standard mt-3"
-                        onClick={() => toggleClientModal(MODAL_TYPE.ADD)}
+                        onClick={() => toggleClientModal(MODAL_TYPE.ADD_FILTERS)}
                         disabled={processingAdding}
                     >
                         <Trans>client_add</Trans>
                     </button>
-
                     <Modal
                         isModalOpen={isModalOpen}
                         modalType={modalType}

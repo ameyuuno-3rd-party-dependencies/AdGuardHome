@@ -48,7 +48,7 @@ class Table extends Component {
             accessor: 'url',
             minWidth: 200,
             Cell: ({ value }) => (
-                <div className="logs__row logs__row--overflow">
+                <div className="logs__row o-hidden">
                     {isValidAbsolutePath(value) ? value
                         : <a
                             href={value}
@@ -92,7 +92,7 @@ class Table extends Component {
                             className="btn btn-icon btn-outline-primary btn-sm mr-2"
                             title={t('edit_table_action')}
                             onClick={() => toggleFilteringModal({
-                                type: MODAL_TYPE.EDIT,
+                                type: MODAL_TYPE.EDIT_FILTERS,
                                 url: value,
                             })
                             }
@@ -126,16 +126,16 @@ class Table extends Component {
             <ReactTable
                 data={filters}
                 columns={this.columns}
-                showPagination={true}
+                showPagination
                 defaultPageSize={10}
                 loading={loading}
                 minRows={6}
+                ofText="/"
                 previousText={t('previous_btn')}
                 nextText={t('next_btn')}
-                loadingText={t('loading_table_status')}
                 pageText={t('page_table_footer_text')}
-                ofText="/"
                 rowsText={t('rows_table_footer_text')}
+                loadingText={t('loading_table_status')}
                 noDataText={whitelist ? t('no_whitelist_added') : t('no_blocklist_added')}
             />
         );

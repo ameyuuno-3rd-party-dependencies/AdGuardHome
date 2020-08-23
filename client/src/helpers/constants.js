@@ -1,13 +1,23 @@
 export const R_URL_REQUIRES_PROTOCOL = /^https?:\/\/[^/\s]+(\/.*)?$/;
-export const R_HOST = /^(\*\.)?([\w-]+\.)+[\w-]+$/;
+
+// matches hostname or *.wildcard
+export const R_HOST = /^(\*\.)?[\w.-]+$/;
+
 export const R_IPV4 = /^(?:(?:^|\.)(?:2(?:5[0-5]|[0-4]\d)|1?\d?\d)){4}$/;
+
 export const R_IPV6 = /^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$/;
+
 export const R_CIDR = /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|[1-2][0-9]|3[0-2]))$/;
+
 export const R_MAC = /^((([a-fA-F0-9][a-fA-F0-9]+[-]){5}|([a-fA-F0-9][a-fA-F0-9]+[:]){5})([a-fA-F0-9][a-fA-F0-9])$)|(^([a-fA-F0-9][a-fA-F0-9][a-fA-F0-9][a-fA-F0-9]+[.]){2}([a-fA-F0-9][a-fA-F0-9][a-fA-F0-9][a-fA-F0-9]))$/;
+
 export const R_CIDR_IPV6 = /^s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:)))(%.+)?s*(\/(12[0-8]|1[0-1][0-9]|[1-9][0-9]|[0-9]))$/;
+
 export const R_PATH_LAST_PART = /\/[^/]*$/;
+
 // eslint-disable-next-line no-control-regex
 export const R_UNIX_ABSOLUTE_PATH = /^(\/[^/\x00]+)+$/;
+
 // eslint-disable-next-line no-control-regex
 export const R_WIN_ABSOLUTE_PATH = /^([a-zA-Z]:)?(\\|\/)(?:[^\\/:*?"<>|\x00]+\\)*[^\\/:*?"<>|\x00]*$/;
 
@@ -35,6 +45,9 @@ export const REPOSITORY = {
 };
 
 export const PRIVACY_POLICY_LINK = 'https://adguard.com/privacy/home.html';
+export const PORT_53_FAQ_LINK = 'https://github.com/AdguardTeam/AdGuardHome/wiki/FAQ#bindinuse';
+
+export const ADDRESS_IN_USE_TEXT = 'address already in use';
 
 export const INSTALL_FIRST_STEP = 1;
 export const INSTALL_TOTAL_STEPS = 5;
@@ -49,13 +62,19 @@ export const SETTINGS_NAMES = {
 export const STANDARD_DNS_PORT = 53;
 export const STANDARD_WEB_PORT = 80;
 export const STANDARD_HTTPS_PORT = 443;
+export const DNS_OVER_TLS_PORT = 853;
+export const MAX_PORT = 65535;
 
 export const EMPTY_DATE = '0001-01-01T00:00:00Z';
 
 export const DEBOUNCE_TIMEOUT = 300;
 export const DEBOUNCE_FILTER_TIMEOUT = 500;
 export const CHECK_TIMEOUT = 1000;
-export const STOP_TIMEOUT = 10000;
+export const SUCCESS_TOAST_TIMEOUT = 5000;
+export const FAILURE_TOAST_TIMEOUT = 30000;
+export const HIDE_TOOLTIP_DELAY = 300;
+export const SHOW_TOOLTIP_DELAY = 200;
+export const MODAL_OPEN_TIMEOUT = 150;
 
 export const UNSAFE_PORTS = [
     1,
@@ -126,15 +145,17 @@ export const UNSAFE_PORTS = [
 
 export const ALL_INTERFACES_IP = '0.0.0.0';
 
-export const DHCP_STATUS_RESPONSE = {
+export const STATUS_RESPONSE = {
     YES: 'yes',
     NO: 'no',
     ERROR: 'error',
 };
 
 export const MODAL_TYPE = {
-    ADD: 'add',
-    EDIT: 'edit',
+    SELECT_MODAL_TYPE: 'SELECT_MODAL_TYPE',
+    ADD_FILTERS: 'ADD_FILTERS',
+    EDIT_FILTERS: 'EDIT_FILTERS',
+    CHOOSE_FILTERING_LIST: 'CHOOSE_FILTERING_LIST',
 };
 
 export const CLIENT_ID = {
@@ -256,18 +277,6 @@ export const ENCRYPTION_SOURCE = {
     CONTENT: 'content',
 };
 
-export const FILTERED_STATUS = {
-    FILTERED_BLACK_LIST: 'FilteredBlackList',
-    NOT_FILTERED_WHITE_LIST: 'NotFilteredWhiteList',
-    NOT_FILTERED_NOT_FOUND: 'NotFilteredNotFound',
-    FILTERED_BLOCKED_SERVICE: 'FilteredBlockedService',
-    REWRITE: 'Rewrite',
-    REWRITE_HOSTS: 'RewriteEtcHosts',
-    FILTERED_SAFE_SEARCH: 'FilteredSafeSearch',
-    FILTERED_SAFE_BROWSING: 'FilteredSafeBrowsing',
-    FILTERED_PARENTAL: 'FilteredParental',
-};
-
 export const FILTERED = 'Filtered';
 export const NOT_FILTERED = 'NotFiltered';
 
@@ -291,69 +300,125 @@ export const WHOIS_ICONS = {
     descr: '',
 };
 
-export const DNS_RECORD_TYPES = [
-    'A',
-    'AAAA',
-    'AFSDB',
-    'APL',
-    'CAA',
-    'CDNSKEY',
-    'CDS',
-    'CERT',
-    'CNAME',
-    'CSYNC',
-    'DHCID',
-    'DLV',
-    'DNAME',
-    'DNSKEY',
-    'DS',
-    'HIP',
-    'IPSECKEY',
-    'KEY',
-    'KX',
-    'LOC',
-    'MX',
-    'NAPTR',
-    'NS',
-    'NSEC',
-    'NSEC3',
-    'NSEC3PARAM',
-    'OPENPGPKEY',
-    'PTR',
-    'RRSIG',
-    'RP',
-    'SIG',
-    'SMIMEA',
-    'SOA',
-    'SRV',
-    'SSHFP',
-    'TA',
-    'TKEY',
-    'TLSA',
-    'TSIG',
-    'TXT',
-    'URI',
-];
-
 export const DEFAULT_LOGS_FILTER = {
-    filter_domain: '',
-    filter_client: '',
-    filter_question_type: '',
-    filter_response_status: '',
+    search: '',
+    response_status: '',
 };
 
 export const DEFAULT_LANGUAGE = 'en';
 
-export const TABLE_DEFAULT_PAGE_SIZE = 100;
+export const TABLE_DEFAULT_PAGE_SIZE = 25;
 
-export const SMALL_TABLE_DEFAULT_PAGE_SIZE = 20;
+export const TABLE_FIRST_PAGE = 0;
+
+export const LEASES_TABLE_DEFAULT_PAGE_SIZE = 20;
+
+export const FILTERED_STATUS = {
+    FILTERED_BLACK_LIST: 'FilteredBlackList',
+    NOT_FILTERED_WHITE_LIST: 'NotFilteredWhiteList',
+    NOT_FILTERED_NOT_FOUND: 'NotFilteredNotFound',
+    FILTERED_BLOCKED_SERVICE: 'FilteredBlockedService',
+    REWRITE: 'Rewrite',
+    REWRITE_HOSTS: 'RewriteEtcHosts',
+    FILTERED_SAFE_SEARCH: 'FilteredSafeSearch',
+    FILTERED_SAFE_BROWSING: 'FilteredSafeBrowsing',
+    FILTERED_PARENTAL: 'FilteredParental',
+};
 
 export const RESPONSE_FILTER = {
-    ALL: 'all',
-    FILTERED: 'filtered',
+    ALL: {
+        query: 'all',
+        label: 'all_queries',
+    },
+    FILTERED: {
+        query: 'filtered',
+        label: 'filtered',
+    },
+    PROCESSED: {
+        query: 'processed',
+        label: 'show_processed_responses',
+    },
+    BLOCKED: {
+        query: 'blocked',
+        label: 'show_blocked_responses',
+    },
+    BLOCKED_THREATS: {
+        query: 'blocked_safebrowsing',
+        label: 'blocked_threats',
+    },
+    BLOCKED_ADULT_WEBSITES: {
+        query: 'blocked_parental',
+        label: 'blocked_adult_websites',
+    },
+    ALLOWED: {
+        query: 'whitelisted',
+        label: 'allowed',
+    },
+    REWRITTEN: {
+        query: 'rewritten',
+        label: 'rewritten',
+    },
+    SAFE_SEARCH: {
+        query: 'safe_search',
+        label: 'safe_search',
+    },
+};
+
+export const RESPONSE_FILTER_QUERIES = Object.values(RESPONSE_FILTER)
+    .reduce((acc, { query }) => {
+        acc[query] = query;
+        return acc;
+    }, {});
+
+export const FILTERED_STATUS_TO_META_MAP = {
+    [FILTERED_STATUS.NOT_FILTERED_WHITE_LIST]: {
+        label: RESPONSE_FILTER.ALLOWED.label,
+        color: 'green',
+    },
+    [FILTERED_STATUS.NOT_FILTERED_NOT_FOUND]: {
+        label: RESPONSE_FILTER.PROCESSED.label,
+        color: 'white',
+    },
+    [FILTERED_STATUS.FILTERED_BLOCKED_SERVICE]: {
+        label: RESPONSE_FILTER.BLOCKED.label,
+        color: 'red',
+    },
+    [FILTERED_STATUS.FILTERED_SAFE_SEARCH]: {
+        label: RESPONSE_FILTER.SAFE_SEARCH.label,
+        color: 'yellow',
+    },
+    [FILTERED_STATUS.FILTERED_BLACK_LIST]: {
+        label: RESPONSE_FILTER.BLOCKED.label,
+        color: 'red',
+    },
+    [FILTERED_STATUS.REWRITE]: {
+        label: RESPONSE_FILTER.REWRITTEN.label,
+        color: 'blue',
+    },
+    [FILTERED_STATUS.REWRITE_HOSTS]: {
+        label: RESPONSE_FILTER.REWRITTEN.label,
+        color: 'blue',
+    },
+    [FILTERED_STATUS.FILTERED_SAFE_BROWSING]: {
+        label: RESPONSE_FILTER.BLOCKED_THREATS.label,
+        color: 'yellow',
+    },
+    [FILTERED_STATUS.FILTERED_PARENTAL]: {
+        label: RESPONSE_FILTER.BLOCKED_ADULT_WEBSITES.label,
+        color: 'yellow',
+    },
 };
 
 export const DEFAULT_TIME_FORMAT = 'HH:mm:ss';
+
+export const LONG_TIME_FORMAT = 'HH:mm:ss.SSS';
+
+export const DEFAULT_SHORT_DATE_FORMAT_OPTIONS = {
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour12: false,
+};
 
 export const DEFAULT_DATE_FORMAT_OPTIONS = {
     year: 'numeric',
@@ -371,18 +436,86 @@ export const DETAILED_DATE_FORMAT_OPTIONS = {
 
 export const CUSTOM_FILTERING_RULES_ID = 0;
 
-export const ACTION = {
-    block: 'block',
-    unblock: 'unblock',
+export const BLOCK_ACTIONS = {
+    BLOCK: 'block',
+    UNBLOCK: 'unblock',
+};
+
+export const SCHEME_TO_PROTOCOL_MAP = {
+    doh: 'dns_over_https',
+    dot: 'dns_over_tls',
+    '': 'plain_dns',
 };
 
 export const DNS_REQUEST_OPTIONS = {
-    PARALLEL_REQUESTS: 'parallel_requests',
+    PARALLEL: 'parallel',
     FASTEST_ADDR: 'fastest_addr',
+    LOAD_BALANCING: '',
 };
 
 export const IP_MATCH_LIST_STATUS = {
     NOT_FOUND: 'NOT_FOUND', // not found in the list
-    EXACT: 'EXACT', // found exact match (ip === ip)
+    EXACT: 'EXACT', // found exact match (including the match of short and long forms)
     CIDR: 'CIDR', // the ip is in the specified CIDR range
+};
+
+export const DHCP_FORM_NAMES = {
+    DHCPv4: 'dhcpv4',
+    DHCPv6: 'dhcpv6',
+    DHCP_INTERFACES: 'dhcpInterfaces',
+};
+
+export const FORM_NAME = {
+    UPSTREAM: 'upstream',
+    DOMAIN_CHECK: 'domainCheck',
+    FILTER: 'filter',
+    REWRITES: 'rewrites',
+    LOGS_FILTER: 'logsFilter',
+    CLIENT: 'client',
+    LEASE: 'lease',
+    ACCESS: 'access',
+    BLOCKING_MODE: 'blockingMode',
+    ENCRYPTION: 'encryption',
+    FILTER_CONFIG: 'filterConfig',
+    LOG_CONFIG: 'logConfig',
+    SERVICES: 'services',
+    STATS_CONFIG: 'statsConfig',
+    INSTALL: 'install',
+    LOGIN: 'login',
+    CACHE: 'cache',
+    ...DHCP_FORM_NAMES,
+};
+
+export const SMALL_SCREEN_SIZE = 767;
+export const MEDIUM_SCREEN_SIZE = 1023;
+
+export const SECONDS_IN_HOUR = 60 * 60;
+
+export const SECONDS_IN_DAY = SECONDS_IN_HOUR * 24;
+
+export const DHCP_VALUES_PLACEHOLDERS = {
+    ipv4: {
+        subnet_mask: '255.255.255.0',
+        lease_duration: SECONDS_IN_DAY.toString(),
+    },
+    ipv6: {
+        range_start: '2001::1',
+        range_end: 'ff',
+        lease_duration: SECONDS_IN_DAY.toString(),
+    },
+};
+
+export const DHCP_DESCRIPTION_PLACEHOLDERS = {
+    ipv4: {
+        gateway_ip: 'dhcp_form_gateway_input',
+        subnet_mask: 'dhcp_form_subnet_input',
+        range_start: 'dhcp_form_range_start',
+        range_end: 'dhcp_form_range_end',
+        lease_duration: 'dhcp_form_lease_input',
+    },
+    ipv6: {
+        range_start: 'dhcp_form_range_start',
+        range_end: 'dhcp_form_range_end',
+        lease_duration: 'dhcp_form_lease_input',
+    },
 };

@@ -7,6 +7,8 @@ import Card from '../../ui/Card';
 import CellWrap from '../../ui/CellWrap';
 
 import whoisCell from './whoisCell';
+import LogsSearchLink from '../../ui/LogsSearchLink';
+import { sortIp } from '../../../helpers/helpers';
 
 const COLUMN_MIN_WIDTH = 200;
 
@@ -17,6 +19,7 @@ class AutoClients extends Component {
             accessor: 'ip',
             minWidth: COLUMN_MIN_WIDTH,
             Cell: CellWrap,
+            sortMethod: sortIp,
         },
         {
             Header: this.props.t('table_name'),
@@ -49,7 +52,9 @@ class AutoClients extends Component {
                     return (
                         <div className="logs__row">
                             <div className="logs__text" title={clientStats}>
-                                {clientStats}
+                                <LogsSearchLink search={row.original.ip}>
+                                    {clientStats}
+                                </LogsSearchLink>
                             </div>
                         </div>
                     );
@@ -79,15 +84,15 @@ class AutoClients extends Component {
                         },
                     ]}
                     className="-striped -highlight card-table-overflow"
-                    showPagination={true}
+                    showPagination
                     defaultPageSize={10}
                     minRows={5}
+                    ofText="/"
                     previousText={t('previous_btn')}
                     nextText={t('next_btn')}
-                    loadingText={t('loading_table_status')}
                     pageText={t('page_table_footer_text')}
-                    ofText="/"
                     rowsText={t('rows_table_footer_text')}
+                    loadingText={t('loading_table_status')}
                     noDataText={t('clients_not_found')}
                 />
             </Card>
