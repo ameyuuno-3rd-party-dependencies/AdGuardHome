@@ -5,16 +5,18 @@ import {
     addErrorToast, addNoticeToast, addSuccessToast,
 } from '../actions/toasts';
 import { removeToast } from '../actions';
+import { TOAST_TYPES } from '../helpers/constants';
 
 const toasts = handleActions({
     [addErrorToast]: (state, { payload }) => {
         const message = payload.error.toString();
-        console.error(message);
+        console.error(payload.error);
 
         const errorToast = {
             id: nanoid(),
             message,
-            type: 'error',
+            options: payload.options,
+            type: TOAST_TYPES.ERROR,
         };
 
         const newState = { ...state, notices: [...state.notices, errorToast] };
@@ -24,7 +26,7 @@ const toasts = handleActions({
         const successToast = {
             id: nanoid(),
             message: payload,
-            type: 'success',
+            type: TOAST_TYPES.SUCCESS,
         };
 
         const newState = { ...state, notices: [...state.notices, successToast] };
@@ -34,7 +36,8 @@ const toasts = handleActions({
         const noticeToast = {
             id: nanoid(),
             message: payload.error.toString(),
-            type: 'notice',
+            options: payload.options,
+            type: TOAST_TYPES.NOTICE,
         };
 
         const newState = { ...state, notices: [...state.notices, noticeToast] };

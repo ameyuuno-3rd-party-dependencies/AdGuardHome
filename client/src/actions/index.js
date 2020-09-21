@@ -2,14 +2,18 @@ import { createAction } from 'redux-actions';
 import i18next from 'i18next';
 import axios from 'axios';
 
+import endsWith from 'lodash/endsWith';
+import escapeRegExp from 'lodash/escapeRegExp';
+import React from 'react';
 import { splitByNewLine, sortClients } from '../helpers/helpers';
 import {
-    CHECK_TIMEOUT, STATUS_RESPONSE, SETTINGS_NAMES, FORM_NAME,
+    BLOCK_ACTIONS, CHECK_TIMEOUT, STATUS_RESPONSE, SETTINGS_NAMES, FORM_NAME, GETTING_STARTED_LINK,
 } from '../helpers/constants';
 import { areEqualVersions } from '../helpers/version';
 import { getTlsStatus } from './encryption';
 import apiClient from '../api/Api';
 import { addErrorToast, addNoticeToast, addSuccessToast } from './toasts';
+import { getFilteringStatus, setRules } from './filtering';
 
 export const toggleSettingStatus = createAction('SETTING_STATUS_TOGGLE');
 export const showSettingsFailure = createAction('SETTINGS_FAILURE_SHOW');
@@ -181,7 +185,14 @@ export const getUpdate = () => async (dispatch, getState) => {
 
     dispatch(getUpdateRequest());
     const handleRequestError = () => {
-        dispatch(addNoticeToast({ error: 'update_failed' }));
+        const options = {
+            components: {
+                a: <a href={GETTING_STARTED_LINK} target="_blank"
+                      rel="noopener noreferrer" />,
+            },
+        };
+
+        dispatch(addNoticeToast({ error: 'update_failed', options }));
         dispatch(getUpdateFailure());
     };
 
@@ -541,3 +552,44 @@ export const removeStaticLease = (config) => async (dispatch) => {
 };
 
 export const removeToast = createAction('REMOVE_TOAST');
+
+export const toggleBlocking = (
+    type, domain, baseRule, baseUnblocking,
+) => async (dispatch, getState) => {
+    const baseBlockingRule = baseRule || `||${domain}^$important`;
+    const baseUnblockingRule = baseUnblocking || `@@${baseBlockingRule}`;
+    const { userRules } = getState().filtering;
+
+    const lineEnding = !endsWith(userRules, '\n') ? '\n' : '';
+
+    const blockingRule = type === BLOCK_ACTIONS.BLOCK ? baseUnblockingRule : baseBlockingRule;
+    const unblockingRule = type === BLOCK_ACTIONS.BLOCK ? baseBlockingRule : baseUnblockingRule;
+    const preparedBlockingRule = new RegExp(`(^|\n)${escapeRegExp(blockingRule)}($|\n)`);
+    const preparedUnblockingRule = new RegExp(`(^|\n)${escapeRegExp(unblockingRule)}($|\n)`);
+
+    const matchPreparedBlockingRule = userRules.match(preparedBlockingRule);
+    const matchPreparedUnblockingRule = userRules.match(preparedUnblockingRule);
+
+    if (matchPreparedBlockingRule) {
+        await dispatch(setRules(userRules.replace(`${blockingRule}`, '')));
+        dispatch(addSuccessToast(i18next.t('rule_removed_from_custom_filtering_toast', { rule: blockingRule })));
+    } else if (!matchPreparedUnblockingRule) {
+        await dispatch(setRules(`${userRules}${lineEnding}${unblockingRule}\n`));
+        dispatch(addSuccessToast(i18next.t('rule_added_to_custom_filtering_toast', { rule: unblockingRule })));
+    } else if (matchPreparedUnblockingRule) {
+        dispatch(addSuccessToast(i18next.t('rule_added_to_custom_filtering_toast', { rule: unblockingRule })));
+        return;
+    } else if (!matchPreparedBlockingRule) {
+        dispatch(addSuccessToast(i18next.t('rule_removed_from_custom_filtering_toast', { rule: blockingRule })));
+        return;
+    }
+
+    dispatch(getFilteringStatus());
+};
+
+export const toggleBlockingForClient = (type, domain, client) => {
+    const baseRule = `||${domain}^$client='${client.replace(/'/g, '/\'')}'`;
+    const baseUnblocking = `@@${baseRule}`;
+
+    return toggleBlocking(type, domain, baseRule, baseUnblocking);
+};

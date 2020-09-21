@@ -10,7 +10,6 @@ import BlockedDomains from './BlockedDomains';
 
 import PageTitle from '../ui/PageTitle';
 import Loading from '../ui/Loading';
-import { BLOCK_ACTIONS } from '../../helpers/constants';
 import './Dashboard.css';
 
 const Dashboard = ({
@@ -19,7 +18,6 @@ const Dashboard = ({
     getStatsConfig,
     dashboard,
     toggleProtection,
-    toggleClientBlock,
     stats,
     access,
 }) => {
@@ -48,14 +46,6 @@ const Dashboard = ({
         >
             <Trans>{buttonText}</Trans>
         </button>;
-    };
-
-    const toggleClientStatus = (type, ip) => {
-        const confirmMessage = type === BLOCK_ACTIONS.BLOCK ? 'client_confirm_block' : 'client_confirm_unblock';
-
-        if (window.confirm(t(confirmMessage, { ip }))) {
-            toggleClientBlock(type, ip);
-        }
     };
 
     const refreshButton = <button
@@ -92,7 +82,7 @@ const Dashboard = ({
             </div>
         </PageTitle>
         {statsProcessing && <Loading />}
-        {!statsProcessing && <div className="row row-cards">
+        {!statsProcessing && <div className="row row-cards dashboard">
             <div className="col-lg-12">
                 <Statistics
                         interval={stats.interval}
@@ -110,7 +100,6 @@ const Dashboard = ({
             <div className="col-lg-6">
                 <Counters
                         subtitle={subtitle}
-
                         refreshButton={refreshButton}
                 />
             </div>
@@ -122,7 +111,6 @@ const Dashboard = ({
                         clients={dashboard.clients}
                         autoClients={dashboard.autoClients}
                         refreshButton={refreshButton}
-                        toggleClientStatus={toggleClientStatus}
                         processingAccessSet={access.processingSet}
                         disallowedClients={access.disallowed_clients}
                 />
@@ -157,7 +145,6 @@ Dashboard.propTypes = {
     getStatsConfig: PropTypes.func.isRequired,
     toggleProtection: PropTypes.func.isRequired,
     getClients: PropTypes.func.isRequired,
-    toggleClientBlock: PropTypes.func.isRequired,
     getAccessList: PropTypes.func.isRequired,
 };
 

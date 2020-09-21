@@ -25,12 +25,13 @@ Contents:
 	* API: Find clients by IP
 * DHCP server
 	* DHCP server in DNS
-	* "Show DHCP interfaces" command
-	* "Show DHCP status" command
-	* "Check DHCP" command
-	* "Enable DHCP" command
+	* DHCP Custom Options
+	* API: Show DHCP interfaces
+	* API: Show DHCP status
+	* API: Check DHCP
+	* API: Enable DHCP
 	* Static IP check/set
-	* Add a static lease
+	* API: Add a static lease
 	* API: Reset DHCP configuration
 * DNS general settings
 	* API: Get DNS general settings
@@ -68,6 +69,7 @@ Contents:
 	* API: Log out
 	* API: Get current user info
 * Safe services
+* ipset
 
 
 ## Relations between subsystems
@@ -429,7 +431,20 @@ DHCP leases are used in several ways by DNS module.
 		> PTR 100.1.168.192.in-addr.arpa. = bills-notebook.
 
 
-### "Show DHCP interfaces" command
+### DHCP Custom Options
+
+Option with arbitrary hexadecimal data:
+
+	DEC_CODE hex HEX_DATA
+
+where DEC_CODE is a decimal DHCPv4 option code in range [1..255]
+
+Option with IP data (only 1 IP is supported):
+
+	DEC_CODE ip IP_ADDR
+
+
+### API: Show DHCP interfaces
 
 Request:
 
@@ -452,7 +467,7 @@ Response:
 	}
 
 
-### "Show DHCP status" command
+### API: Show DHCP status
 
 Request:
 
@@ -487,7 +502,7 @@ Response:
 	}
 
 
-### "Check DHCP" command
+### API: Check DHCP
 
 Request:
 
@@ -535,7 +550,7 @@ If `static_ip.static` is:
 		In order to use DHCP server a static IP address must be set.  We failed to determine if this network interface is configured using static IP address.  Please set a static IP address manually.
 
 
-### "Enable DHCP" command
+### API: Enable DHCP
 
 Request:
 
@@ -662,7 +677,7 @@ or:
 	systemctl restart system-networkd
 
 
-### Add a static lease
+### API: Add a static lease
 
 Request:
 
@@ -728,6 +743,7 @@ Response:
 	"server_name":"...",
 	"port_https":443,
 	"port_dns_over_tls":853,
+	"port_dns_over_quic":784,
 	"certificate_chain":"...",
 	"private_key":"...",
 	"certificate_path":"...",
@@ -759,6 +775,7 @@ Request:
 	"force_https":false,
 	"port_https":443,
 	"port_dns_over_tls":853,
+	"port_dns_over_quic":784,
 	"certificate_chain":"...",
 	"private_key":"...",
 	"certificate_path":"...", // if set, certificate_chain must be empty
@@ -971,11 +988,12 @@ Response:
 
 	{
 		"upstream_dns": ["tls://...", ...],
+		"upstream_dns_file": "",
 		"bootstrap_dns": ["1.2.3.4", ...],
 
 		"protection_enabled": true | false,
 		"ratelimit": 1234,
-		"blocking_mode": "default" | "nxdomain" | "null_ip" | "custom_ip",
+		"blocking_mode": "default" | "refused" | "nxdomain" | "null_ip" | "custom_ip",
 		"blocking_ipv4": "1.2.3.4",
 		"blocking_ipv6": "1:2:3::4",
 		"edns_cs_enabled": true | false,
@@ -996,11 +1014,12 @@ Request:
 
 	{
 		"upstream_dns": ["tls://...", ...],
+		"upstream_dns_file": "",
 		"bootstrap_dns": ["1.2.3.4", ...],
 
 		"protection_enabled": true | false,
 		"ratelimit": 1234,
-		"blocking_mode": "default" | "nxdomain" | "null_ip" | "custom_ip",
+		"blocking_mode": "default" | "refused" | "nxdomain" | "null_ip" | "custom_ip",
 		"blocking_ipv4": "1.2.3.4",
 		"blocking_ipv6": "1:2:3::4",
 		"edns_cs_enabled": true | false,
@@ -1423,6 +1442,11 @@ When UI asks for data from query log (see "API: Get query log"), server reads th
 ### Removing old data
 
 We store data for a limited amount of time - the log file is automatically rotated.
+
+* On AGH startup read the first line from query logs and store its time value
+* If there's no log file yet, set the time value of the first log event when the file is created
+* If this time value is older than our time limit, perform file rotate procedure
+* While AGH is running, check the previous condition every 24 hours
 
 
 ### API: Get query log
@@ -1868,3 +1892,25 @@ Check if host name is blocked by SB/PC service:
 		sha256(host.com)[0..1] -> hashes[0],hashes[1],...
 		sha256(sub.host.com)[0..1] -> hashes[2],...
 		...
+
+
+## ipset
+
+AGH can add IP addresses of the specified in configuration domain names to an ipset list.
+
+Prepare: user creates an ipset list and configures AGH for using it.
+
+	1. User --( ipset create my_ipset hash:ip ) -> OS
+	2. User --( ipset: host.com,host2.com/my_ipset )-> AGH
+
+		Syntax:
+
+			ipset: "DOMAIN[,DOMAIN].../IPSET1_NAME[,IPSET2_NAME]..."
+
+		IPv4 addresses are added to an ipset list with `ipv4` family, IPv6 addresses - to `ipv6` ipset list.
+
+Run-time: AGH adds IP addresses of a domain name to a corresponding ipset list.
+
+	1. AGH --( resolve host.com )-> upstream
+	2. AGH <-( host.com:[1.1.1.1,2.2.2.2] )-- upstream
+	3. AGH --( ipset.add(my_ipset, [1.1.1.1,2.2.2.2] ))-> OS
